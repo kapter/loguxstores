@@ -5,12 +5,12 @@ import { onMount } from 'svelte';
 
 const client = new Client({
     subprotocol: '1.0.0',
-    server: 'ws://127.0.0.1:31337/',
+    server: 'ws://localhost:31337/',
     userId: 'user',
     token: 'token'
   })
-
-// log(client);
+client.start();
+log(client);
 
 function createCount() {
 	const { subscribe, set, update } = atom(0);
@@ -19,7 +19,7 @@ function createCount() {
 		subscribe: () => client.log.add({ type: 'logux/subscribe', channel: 'counter' }, { sync: true }).then((r)=>{console.log(r);}),
 		increment: () => client.sync({ type: 'INC' }).then((r)=>{console.log(r);}),
 		decrement: () => {},
-		reset: () => set(0)
+		reset: () => client.sync({ type: 'DROP' }).then((r)=>{console.log(r);}),
 	};
 }
 export const count = createCount(0);
