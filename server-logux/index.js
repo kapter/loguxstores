@@ -7,8 +7,7 @@ const server = new Server(
     fileUrl: import.meta.url
   })
 )
-let counter=0;
-
+let counter=1;
 server.auth(({ userId, token }) => {
   // Allow only local users until we will have a proper authentication
   return true;
@@ -18,6 +17,7 @@ server.channel('counter', {
   access (ctx) {
     // User can subscribe only to own data
     // return ctx.params.id === ctx.userId
+    console.log(ctx.params);
     console.log('channel');
     return true;
   },
@@ -34,14 +34,42 @@ server.type('INC', {
     return true
   },
   resend () {
+    console.log('resend');
     return 'counter';
   },
-  async process (ctx) {
+  async process (ctx,action,meta) {
     // Don’t forget to keep action atomic
-    counter += 1;
+    console.log(action);
     console.log(counter);
-    ctx.sendBack({ type: 'counter', counter })
+    counter += 1;
+    ctx.sendBack({ type: 'counter', value: counter });
   }
 })
 
+server.channel('point/:id', {
+  access (ctx) {
+    // User can subscribe only to own data
+    // return ctx.params.id === ctx.userId
+    console.log(ctx.params);
+    console.log('channel');
+    return true;
+  },
+  async load (ctx) {
+    // Creating action to set user name and sending it to subscriber
+    return { type: 'orders', orders: [{"id":1}]}
+  }
+})
+
+
+server.type('orders_changed', {
+  access () {
+    return true
+  },
+  resend (ctx,action) {
+    return 'point/'+action.pointId;
+  },
+  async process (ctx,action,meta) {
+
+  }
+})
 server.listen()

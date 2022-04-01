@@ -2,41 +2,54 @@
 import { atom} from 'nanostores';
 import { Client, badge, badgeEn, log,buildNewSyncMap } from '@logux/client'
 import { onMount } from 'svelte';
+import { writable } from 'svelte/store';
 
-const client = new Client({
+
+export const client = new Client({
     subprotocol: '1.0.0',
     server: 'ws://localhost:31337/',
     userId: 'user',
     token: 'token'
   })
+
 client.start();
+export let worders = writable([]);
+
+client.log.add({ type: 'logux/subscribe', channel: 'point/ggg' }, { sync: true }).then(()=>
+	client.on('add', (action, meta) => {
+		console.log("add");
+		console.log(action);
+		if (action.type == 'orders_changed'){
+			worders.set(action.orders);
+		}
+	})
+);
+// worders.subscribe(ordersValue => {
+// 	console.log(ordersValue);
+// }); 
+
+
 log(client);
 
-function createCount() {
-	const { subscribe, set, update } = atom(0);
+// function createCount() {
+// 	const { subscribe, set, update } = writable(0);
 
-	return {
-		subscribe: () => client.log.add({ type: 'logux/subscribe', channel: 'counter' }, { sync: true }).then((r)=>{console.log(r);}),
-		increment: () => client.sync({ type: 'INC' }).then((r)=>{console.log(r);}),
-		decrement: () => {},
-		reset: () => client.sync({ type: 'DROP' }).then((r)=>{console.log(r);}),
-	};
-}
-export const count = createCount(0);
+// 	return {
+// 		subscribe,
+// 		increment: () => {console.log("store increment");client.sync({type: 'INC'}).then((r,data)=>{console.log(r);console.log(data);})},
+		
+// 	};
+// }
 
-
-// export const userStore = buildNewSyncMap(client, User, {
-//     id: nanoid(),
-//     login: 'test'
-//   })
-
-// client.start();
-// 	client.on('counter', (action, meta) => {
-// 		console.log('on');
-// 		console.log(action);
-// 		console.log(meta);
-// 	});
-// onMount(async () => {
-	
-	
-// });
+export const count = writable(0);
+client.log.add({ type: 'logux/subscribe', channel: 'counter' }, { sync: true }).then(
+	() => client.on('add', (action, meta) => {
+		console.log("add");
+		console.log(action);
+		if (action.type == 'counter'){
+			console.log(action.value);
+			count.set(action.value);
+			console.log("set value");
+		}
+	})
+);
